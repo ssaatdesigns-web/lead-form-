@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SAAT Designs Lead Form</title>
+</head>
+<body>
+  <h2>Submit Your Requirement</h2>
+
+  <form id="leadForm">
+    <input name="name" placeholder="Name" required /><br/>
+    <input name="phone" placeholder="Phone" required /><br/>
+    <input name="email" type="email" placeholder="Email" required /><br/>
+    <input name="city" placeholder="City" required /><br/>
+    <input name="state" placeholder="State" required /><br/>
+    <input name="pincode" placeholder="Pincode" required /><br/>
+
+    <select name="intent" required>
+      <option value="buy">Buy</option>
+      <option value="rent">Rent</option>
+    </select><br/>
+
+    <select name="bhk" required>
+      <option value="studio">Studio</option>
+      <option value="1bhk">1 BHK</option>
+      <option value="2bhk" selected>2 BHK</option>
+      <option value="3bhk">3 BHK</option>
+      <option value="4bhk">4 BHK</option>
+      <option value="4+bhk">4+ BHK</option>
+      <option value="other">Other</option>
+    </select><br/>
+
+    <select name="interest_level" required>
+      <option value="extremely_sure">Extremely sure</option>
+      <option value="highly_interested">Highly interested</option>
+      <option value="interested" selected>Interested</option>
+    </select><br/>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <p id="msg"></p>
+
+  <script>
+    const API = "https://realestate-ai-leads-9kso.vercel.app/api/leads";
+
+    document.getElementById("leadForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("msg");
+      msg.textContent = "Submitting...";
+
+      const payload = Object.fromEntries(new FormData(e.target).entries());
+
+      try {
+        const res = await fetch(API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Failed");
+        msg.textContent = "Submitted successfully.";
+        e.target.reset();
+      } catch (err) {
+        msg.textContent = "Error: " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
