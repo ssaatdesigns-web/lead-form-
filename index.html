@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SAAT Designs Lead Form</title>
 
+  <!-- Excel parser (SheetJS) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <style>
     :root{
       --bg1:#0b0f17;
@@ -36,7 +39,7 @@
     }
 
     .wrap{
-      width:min(980px, 100%);
+      width:min(1040px, 100%);
       display:grid;
       grid-template-columns: 1.15fr .85fr;
       gap:18px;
@@ -72,6 +75,7 @@
       align-items:center;
       justify-content:space-between;
       gap:14px;
+      flex-wrap:wrap;
     }
 
     .brand{
@@ -104,8 +108,6 @@
     }
 
     .trust{
-      position:relative;
-      z-index:1;
       display:flex;
       align-items:center;
       gap:10px;
@@ -147,10 +149,9 @@
       color:var(--muted);
       line-height:1.5;
       font-size:13px;
-      max-width:60ch;
+      max-width:70ch;
     }
 
-    /* Wizard */
     .wizard{
       padding:18px 22px 22px;
     }
@@ -183,9 +184,7 @@
       white-space:nowrap;
     }
 
-    form{
-      margin:0;
-    }
+    form{ margin:0; }
 
     .grid{
       display:grid;
@@ -201,7 +200,7 @@
       margin:0 0 6px;
     }
 
-    input, select{
+    input, select, textarea{
       width:100%;
       padding:12px 12px;
       border-radius:12px;
@@ -209,12 +208,12 @@
       background: rgba(15,23,42,.65);
       color: var(--text);
       outline:none;
-      transition: border-color .2s ease, box-shadow .2s ease, transform .05s ease;
+      transition: border-color .2s ease, box-shadow .2s ease;
     }
 
     input::placeholder{ color: rgba(156,163,175,.75); }
 
-    input:focus, select:focus{
+    input:focus, select:focus, textarea:focus{
       border-color: rgba(212,175,55,.55);
       box-shadow: 0 0 0 4px rgba(212,175,55,.12);
     }
@@ -276,11 +275,11 @@
       font-size:13px;
       color: var(--muted);
       min-height: 18px;
+      white-space: pre-wrap;
     }
     .msg.ok{ color: rgba(34,197,94,.95); }
     .msg.bad{ color: rgba(239,68,68,.95); }
 
-    /* Right side info panel */
     .side{
       padding:22px;
       display:flex;
@@ -305,38 +304,6 @@
       font-size:13px;
       line-height:1.6;
     }
-    .list{
-      margin:10px 0 0;
-      padding:0;
-      list-style:none;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    }
-    .list li{
-      display:flex;
-      gap:10px;
-      align-items:flex-start;
-      color: var(--text);
-      font-size:13px;
-    }
-    .check{
-      width:18px;height:18px;border-radius:6px;
-      border:1px solid rgba(212,175,55,.25);
-      background: rgba(212,175,55,.10);
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      flex: 0 0 auto;
-      margin-top:2px;
-    }
-    .check::after{
-      content:"✓";
-      font-weight:900;
-      color: var(--gold2);
-      font-size:12px;
-      line-height:1;
-    }
 
     .footerNote{
       margin-top:auto;
@@ -347,18 +314,60 @@
       line-height:1.5;
     }
 
-    /* Step sections */
-    .step{
-      display:none;
-      animation: fade .2s ease;
-    }
+    .step{ display:none; animation: fade .2s ease; }
     .step.active{ display:block; }
     @keyframes fade{
       from{opacity:.6; transform: translateY(3px);}
       to{opacity:1; transform: translateY(0);}
     }
 
-    /* Mobile */
+    .divider{
+      margin:18px 0 0;
+      padding-top:18px;
+      border-top:1px solid rgba(255,255,255,.10);
+    }
+
+    .adminTitle{
+      font-weight:800;
+      letter-spacing:.2px;
+      margin:0 0 8px;
+    }
+
+    .small{
+      font-size:12px;
+      color:var(--muted);
+      margin:0 0 10px;
+      line-height:1.5;
+    }
+
+    .preview{
+      margin-top:10px;
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:14px;
+      overflow:auto;
+      max-height:260px;
+      background: rgba(15,23,42,.55);
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width: 700px;
+    }
+    th, td{
+      padding:10px 10px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-size:12px;
+      color: rgba(255,255,255,.88);
+      text-align:left;
+      white-space:nowrap;
+    }
+    th{
+      color: rgba(255,255,255,.70);
+      background: rgba(255,255,255,.03);
+      position: sticky;
+      top: 0;
+    }
+
     @media (max-width: 900px){
       .wrap{ grid-template-columns: 1fr; }
       .trust{ justify-content:flex-start; }
@@ -369,7 +378,7 @@
 <body>
   <div class="wrap">
 
-    <!-- Left: Form -->
+    <!-- Left: Form + Import -->
     <div class="panel">
       <div class="hero">
         <div class="topbar">
@@ -506,28 +515,76 @@
 
           <p id="msg" class="msg"></p>
         </form>
+
+        <!-- Admin Import -->
+        <div class="divider">
+          <h3 class="adminTitle">Admin: Import Excel Leads</h3>
+          <p class="small">
+            Upload .xls/.xlsx and import rows into your main system (Supabase via your backend API).
+            Your file columns will be auto-mapped where possible.
+          </p>
+
+          <div class="grid one">
+            <div>
+              <label for="excelFile">Excel file (.xls/.xlsx)</label>
+              <input id="excelFile" type="file" accept=".xls,.xlsx" />
+              <div class="hint">Tip: large files should be imported in batches.</div>
+            </div>
+
+            <div class="grid">
+              <div>
+                <label for="defaultIntent">Default intent (if missing)</label>
+                <select id="defaultIntent">
+                  <option value="buy" selected>Buy</option>
+                  <option value="rent">Rent</option>
+                </select>
+              </div>
+              <div>
+                <label for="defaultInterest">Default interest (if missing)</label>
+                <select id="defaultInterest">
+                  <option value="interested" selected>Interested</option>
+                  <option value="highly_interested">Highly interested</option>
+                  <option value="extremely_sure">Extremely sure</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid">
+              <div>
+                <label for="batchSize">Batch size</label>
+                <input id="batchSize" type="number" min="1" max="200" value="25" />
+                <div class="hint">Recommended: 20–50 per batch.</div>
+              </div>
+              <div>
+                <label>&nbsp;</label>
+                <button class="btn primary" id="importBtn" type="button" disabled>Import to System</button>
+              </div>
+            </div>
+
+            <div>
+              <p id="importMsg" class="msg"></p>
+              <div class="preview" id="preview" style="display:none;"></div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
-    <!-- Right: Premium info -->
+    <!-- Right panel -->
     <div class="panel">
       <div class="side">
-        <h3>Why submit here?</h3>
+        <h3>What happens after submission?</h3>
 
         <div class="cardlet">
           <p>
-            We verify requirements and match you with relevant options—so you don’t waste time on irrelevant listings.
+            Our team verifies your requirement and shares only relevant property options—no spam listings.
           </p>
-          <ul class="list">
-            <li><span class="check"></span>Shortlisted properties only</li>
-            <li><span class="check"></span>Fast follow-up from our team</li>
-            <li><span class="check"></span>Priority handling for “Extremely sure” leads</li>
-          </ul>
         </div>
 
         <div class="cardlet">
           <p>
-            Your details are used only to connect you with property sellers/agents and provide the best deals based on your requirement.
+            Your information is used only to connect you with sellers/agents and provide best deals based on your requirement.
           </p>
         </div>
 
@@ -540,9 +597,11 @@
   </div>
 
   <script>
-    // Connects to your existing backend (realestate-ai-leads)
     const API = "https://realestate-ai-leads-9kso.vercel.app/api/leads";
 
+    // =========================
+    // 1) Multi-step form logic
+    // =========================
     const form = document.getElementById("leadForm");
     const msg = document.getElementById("msg");
 
@@ -560,20 +619,14 @@
     function showStep(n){
       current = n;
       steps.forEach(s => s.classList.toggle("active", Number(s.dataset.step) === current));
-
       stepLabel.textContent = `Step ${current} of ${total}`;
       progressBar.style.width = `${Math.round((current/total)*100)}%`;
 
       backBtn.style.visibility = current === 1 ? "hidden" : "visible";
-
       const isLast = current === total;
       nextBtn.style.display = isLast ? "none" : "inline-flex";
       submitBtn.style.display = isLast ? "inline-flex" : "none";
-
-      // when arriving at last step, enforce submit disabled until valid
-      if (isLast) {
-        submitBtn.disabled = !validateStep(current, true);
-      }
+      if (isLast) submitBtn.disabled = !validateStep(current);
 
       msg.className = "msg";
       msg.textContent = "";
@@ -589,25 +642,20 @@
     function isEmail(v){
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
     }
-
     function digitsOnly(v){ return (v || "").replace(/\D/g, ""); }
 
     function validateField(input){
       const name = input.name;
       const val = (input.value || "").trim();
 
-      // Required check
       if (input.hasAttribute("required") && !val){
         setError(name, true, "This field is required.");
         return false;
       }
-
-      // Specific checks
       if (name === "email" && val && !isEmail(val)){
         setError(name, true, "Please enter a valid email.");
         return false;
       }
-
       if (name === "phone"){
         const d = digitsOnly(val);
         if (d.length !== 10){
@@ -615,7 +663,6 @@
           return false;
         }
       }
-
       if (name === "pincode"){
         const d = digitsOnly(val);
         if (d.length !== 6){
@@ -623,66 +670,39 @@
           return false;
         }
       }
-
       setError(name, false);
       return true;
     }
 
-    function validateStep(stepNum, silent=false){
+    function validateStep(stepNum){
       const stepEl = steps.find(s => Number(s.dataset.step) === stepNum);
       const inputs = Array.from(stepEl.querySelectorAll("input, select"));
       let ok = true;
-
-      inputs.forEach(inp => {
-        const valid = validateField(inp);
-        if (!valid) ok = false;
-      });
-
-      // On last step, keep submit enabled/disabled live
+      inputs.forEach(inp => { if (!validateField(inp)) ok = false; });
       if (stepNum === total) submitBtn.disabled = !ok;
-
       return ok;
     }
 
-    // Live validation
     form.addEventListener("input", (e) => {
       const t = e.target;
       if (!(t instanceof HTMLInputElement || t instanceof HTMLSelectElement)) return;
-      // validate current step only
-      const stepNum = current;
-      if (steps.find(s => Number(s.dataset.step) === stepNum).contains(t)) {
-        validateField(t);
-        if (stepNum === total) submitBtn.disabled = !validateStep(total, true);
-      }
+      validateField(t);
+      if (current === total) submitBtn.disabled = !validateStep(total);
     });
 
-    backBtn.addEventListener("click", () => {
-      if (current > 1) showStep(current - 1);
-    });
-
-    nextBtn.addEventListener("click", () => {
-      if (!validateStep(current)) return;
-      showStep(current + 1);
-    });
+    backBtn.addEventListener("click", () => { if (current > 1) showStep(current - 1); });
+    nextBtn.addEventListener("click", () => { if (!validateStep(current)) return; showStep(current + 1); });
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-
-      // Final guard: must be valid
       for (let i=1; i<=total; i++){
-        if (!validateStep(i)) {
-          showStep(i);
-          return;
-        }
+        if (!validateStep(i)) { showStep(i); return; }
       }
 
       msg.className = "msg";
       msg.textContent = "Submitting...";
 
-      // Build payload
       const payload = Object.fromEntries(new FormData(form).entries());
-
-      // Normalize phone/pincode to digits
       payload.phone = (payload.phone || "").replace(/\D/g, "");
       payload.pincode = (payload.pincode || "").replace(/\D/g, "");
 
@@ -692,13 +712,11 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-
         const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json.error || "Failed");
 
         msg.className = "msg ok";
         msg.textContent = "Submitted successfully. Our team will contact you shortly.";
-
         form.reset();
         showStep(1);
       } catch (err) {
@@ -707,8 +725,222 @@
       }
     });
 
-    // init
     showStep(1);
+
+    // =========================
+    // 2) Excel import logic
+    // =========================
+    const excelFile = document.getElementById("excelFile");
+    const importBtn = document.getElementById("importBtn");
+    const importMsg = document.getElementById("importMsg");
+    const preview = document.getElementById("preview");
+    const defaultIntent = document.getElementById("defaultIntent");
+    const defaultInterest = document.getElementById("defaultInterest");
+    const batchSizeEl = document.getElementById("batchSize");
+
+    let parsedRows = [];
+
+    function normKey(k){
+      return String(k || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "_")
+        .replace(/[^\w]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "");
+    }
+
+    function pickKey(keys, candidates){
+      const set = new Set(keys);
+      for (const c of candidates){
+        if (set.has(c)) return c;
+      }
+      return null;
+    }
+
+    function normalizePhone(v){
+      const digits = String(v ?? "").replace(/\D/g, "");
+      if (!digits) return "";
+      // keep last 10 digits if country code included
+      return digits.length > 10 ? digits.slice(-10) : digits;
+    }
+
+    function mapBhk(v){
+      const s = String(v ?? "").toLowerCase();
+      if (!s) return "";
+      if (s.includes("studio")) return "studio";
+      if (s.includes("1")) return "1bhk";
+      if (s.includes("2")) return "2bhk";
+      if (s.includes("3")) return "3bhk";
+      if (s.includes("4+")) return "4+bhk";
+      if (s.includes("4")) return "4bhk";
+      return "other";
+    }
+
+    function renderPreview(rows){
+      const head = `
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th><th>Phone</th><th>BHK</th><th>Intent</th><th>Interest</th><th>Meta Lead ID</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      const body = rows.slice(0, 10).map(r => `
+        <tr>
+          <td>${escapeHtml(r.name || "-")}</td>
+          <td>${escapeHtml(r.phone || "-")}</td>
+          <td>${escapeHtml(r.bhk || "-")}</td>
+          <td>${escapeHtml(r.intent || "-")}</td>
+          <td>${escapeHtml(r.interest_level || "-")}</td>
+          <td>${escapeHtml(r.leadgen_id || "-")}</td>
+        </tr>
+      `).join("");
+      const foot = `</tbody></table>`;
+      preview.innerHTML = head + body + foot;
+      preview.style.display = "block";
+    }
+
+    function escapeHtml(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    excelFile.addEventListener("change", async () => {
+      importMsg.className = "msg";
+      importMsg.textContent = "";
+      preview.style.display = "none";
+      parsedRows = [];
+      importBtn.disabled = true;
+
+      const file = excelFile.files && excelFile.files[0];
+      if (!file) return;
+
+      try{
+        importMsg.textContent = "Reading Excel...";
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: "array" });
+
+        const firstSheet = wb.SheetNames[0];
+        const ws = wb.Sheets[firstSheet];
+
+        // Convert to JSON (header row assumed)
+        const raw = XLSX.utils.sheet_to_json(ws, { defval: "" });
+
+        // Normalize keys
+        const normalized = raw.map(obj => {
+          const out = {};
+          for (const [k,v] of Object.entries(obj)){
+            out[normKey(k)] = v;
+          }
+          return out;
+        });
+
+        if (!normalized.length){
+          importMsg.className = "msg bad";
+          importMsg.textContent = "No rows found in the sheet.";
+          return;
+        }
+
+        const keys = Object.keys(normalized[0]);
+
+        // Auto-detect columns based on your file
+        const nameKey = pickKey(keys, ["full_name","name"]);
+        const phoneKey = pickKey(keys, ["phone_number","phone","mobile","phone_no"]);
+        const bhkKey = pickKey(keys, [
+          "all_right_please_select_the_flat_type",
+          "please_select_the_flat_type",
+          "flat_type",
+          "bhk"
+        ]);
+        const idKey = pickKey(keys, ["id","leadgen_id"]);
+
+        // Map to your API payload format
+        parsedRows = normalized.map(r => ({
+          name: nameKey ? String(r[nameKey] || "").trim() : "",
+          phone: phoneKey ? normalizePhone(r[phoneKey]) : "",
+          email: "",             // not present in your excel
+          city: "",              // not present
+          state: "",             // not present
+          pincode: "",           // not present
+          intent: defaultIntent.value || "buy",
+          bhk: mapBhk(bhkKey ? r[bhkKey] : ""),
+          interest_level: defaultInterest.value || "interested",
+
+          // Extra meta (safe to send; backend can ignore or store in raw_payload)
+          source: "excel_import",
+          leadgen_id: idKey ? String(r[idKey] || "") : "",
+          created_time: r.created_time ? String(r.created_time) : "",
+          raw_payload: r
+        }));
+
+        // Basic validation: require at least name/phone
+        const validCount = parsedRows.filter(x => x.name && x.phone).length;
+
+        renderPreview(parsedRows);
+
+        importMsg.className = "msg ok";
+        importMsg.textContent =
+          `Loaded ${parsedRows.length} rows from "${firstSheet}".\n` +
+          `Ready to import: ${validCount} rows (rows missing name/phone will be skipped).`;
+
+        importBtn.disabled = validCount === 0;
+      }catch(e){
+        importMsg.className = "msg bad";
+        importMsg.textContent = "Failed to read Excel: " + (e?.message || String(e));
+      }
+    });
+
+    importBtn.addEventListener("click", async () => {
+      if (!parsedRows.length) return;
+
+      const batchSize = Math.max(1, Math.min(200, Number(batchSizeEl.value || 25)));
+      const rowsToSend = parsedRows.filter(x => x.name && x.phone);
+
+      let ok = 0;
+      let fail = 0;
+
+      importBtn.disabled = true;
+      importMsg.className = "msg";
+      importMsg.textContent = `Importing ${rowsToSend.length} leads in batches of ${batchSize}...`;
+
+      for (let i=0; i<rowsToSend.length; i+=batchSize){
+        const batch = rowsToSend.slice(i, i+batchSize);
+
+        // Send sequentially (stable + avoids rate limits)
+        for (const row of batch){
+          try{
+            const res = await fetch(API, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(row),
+            });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(json.error || "Failed");
+
+            ok++;
+          }catch(e){
+            fail++;
+          }
+        }
+
+        importMsg.textContent =
+          `Import progress: ${ok} success, ${fail} failed.\n` +
+          `Processed ${Math.min(i+batchSize, rowsToSend.length)} / ${rowsToSend.length}...`;
+      }
+
+      importMsg.className = fail ? "msg bad" : "msg ok";
+      importMsg.textContent =
+        `Import finished.\nSuccess: ${ok}\nFailed: ${fail}\n` +
+        `Check your dashboard: https://realestate-ai-leads-9kso.vercel.app/leads`;
+
+      importBtn.disabled = false;
+    });
   </script>
 </body>
 </html>
